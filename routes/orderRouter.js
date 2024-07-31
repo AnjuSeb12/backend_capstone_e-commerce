@@ -1,5 +1,5 @@
 import express from "express"
-import { allorderView, OrderAdding, orderDelete, orderViewById } from "../controllers/orderController"
+import { allorderView, OrderAdding, orderDelete, orderViewById } from "../controllers/orderController.js"
 
 
 const orderRouter=express.Router()
