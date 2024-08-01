@@ -1,15 +1,7 @@
 import User from "../models/userModel.js";
 import bcrypt from "bcrypt"
+import { generateToken } from "../utils/generateToken.js";
 const saltRound = 10;
-
-
-
-
-
-
-
-
-
 const userRegisteration = async (req, res) => {
 
     const { firstName, lastName, email, password } = req.body;
@@ -30,12 +22,16 @@ const userRegisteration = async (req, res) => {
                 message: "User Registeration Failed!",
             })
         }
+
+        const token = generateToken(email);
+
+        res.cookie("token", token)
         res.status(201).json({
             success: true,
-            message: "User Registration Successfully Completed!!",
+            message: "User Registeration Successfully Completed",
             user,
-            isAuthenticated: true,
-        })
+            token
+        });
 
 
     } catch (error) {
@@ -69,12 +65,14 @@ const userLogin = async (req, res) => {
                 message: 'Invalid credentials!'
             });
         }
-
+        const token = generateToken(email);
+        res.cookie("token", token);
         res.status(201).json({
             success: true,
             message: "Loged in Successfully!",
-            isAuthenticated: true,
-            user
+            token,
+            user,
+            
         });
 
 
@@ -113,10 +111,10 @@ const getAllUsers = async (req, res) => {
     }
 }
 const getSingleUser = async (req, res) => {
-   
+
     try {
-        const {id}=req.params;
-        const user = await User.findOne({ _id:id });
+        const { id } = req.params;
+        const user = await User.findOne({ _id: id });
 
         if (!user) {
             return res.status(404).json({
@@ -139,62 +137,62 @@ const getSingleUser = async (req, res) => {
     }
 
 }
-const userDelete= async (req,res)=>{
+const userDelete = async (req, res) => {
     try {
-        const {id}=req.params
-        const user=await User.findByIdAndDelete(id);
-        if(!user){
+        const { id } = req.params
+        const user = await User.findByIdAndDelete(id);
+        if (!user) {
             return res.status(404).json({
-                success:false,
-                message:"user not found"
+                success: false,
+                message: "user not found"
 
             })
         }
         res.status(200).json({
-            success:true,
-            message:"Deleted User"
+            success: true,
+            message: "Deleted User"
         })
-        
+
     } catch (error) {
         res.status(500).json({
             success: false,
             message: error.message
         })
 
-        
+
     }
 }
-const userUpdate = async (req,res) => {
+const userUpdate = async (req, res) => {
     try {
-        const {id}=req.params;
-        const {firstName,lastName,email}=req.body;
-        const user = await User.findByIdAndUpdate(id,{
+        const { id } = req.params;
+        const { firstName, lastName, email } = req.body;
+        const user = await User.findByIdAndUpdate(id, {
             firstName,
             lastName,
             email
         },
-    {new:true});
-       
-        if(!user){
+            { new: true });
+
+        if (!user) {
             return res.status(404).json({
-                success:false,
-                message:"user not found"
+                success: false,
+                message: "user not found"
             })
         }
         res.status(200).json({
-            success:true,
-            message:"Updated User",
+            success: true,
+            message: "Updated User",
             user
         })
 
 
-        
+
     } catch (error) {
         res.status(500).json({
             success: false,
             message: error.message
         })
-        
+
     }
 }
-export { userLogin, userRegisteration, getAllUsers,getSingleUser,userDelete,userUpdate }
+export { userLogin, userRegisteration, getAllUsers, getSingleUser, userDelete, userUpdate }

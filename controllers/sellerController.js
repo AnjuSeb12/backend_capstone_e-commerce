@@ -1,13 +1,7 @@
 import Seller from "../models/sellerModel.js"
 import bcrypt from "bcrypt"
+import { sellerToken } from "../utils/generateToken.js";
 const saltRound = 10;
-
-
-
-
-
-
-
 
 
 const sellerRegisteration = async (req, res) => {
@@ -20,7 +14,7 @@ const sellerRegisteration = async (req, res) => {
             firstName,
             lastName,
             email,
-            role:'seller',
+            role: 'admin',
             password: hashedPass
 
         });
@@ -31,10 +25,13 @@ const sellerRegisteration = async (req, res) => {
                 message: "User Registeration Failed!",
             })
         }
+        const token = sellerToken(seller);
+        res.cookie("token", token);
         res.status(201).json({
             success: true,
-            message: "User Registration Successfully Completed!!",
+            message: "Seller Registration Successfully Completed!!",
             seller,
+            token,
             isAuthenticated: true,
         })
 
@@ -54,7 +51,7 @@ const sellerLogin = async (req, res) => {
     const { email, password } = req.body;
     try {
         const seller = await Seller.findOne({ email });
-        
+
         if (!seller) {
             return res.status(404).json({
                 success: false,
@@ -70,14 +67,17 @@ const sellerLogin = async (req, res) => {
                 message: 'Invalid credentials!'
             });
         }
-
+        const token = sellerToken(seller);
+        res.cookie("token", token);
         res.status(201).json({
             success: true,
             message: "Loged in Successfully!",
+            seller,
+            token,
             isAuthenticated: true,
-            seller
-        });
+        })
 
+      
 
     } catch (error) {
         res.status(500).json({
@@ -92,7 +92,7 @@ const getAllSellers = async (req, res) => {
 
 
     try {
-        const sellers= await Seller.find();
+        const sellers = await Seller.find();
 
         if (!sellers) {
             return res.status(404).json({
@@ -113,11 +113,11 @@ const getAllSellers = async (req, res) => {
 
     }
 }
-const getSingleSeller= async (req, res) => {
-   
+const getSingleSeller = async (req, res) => {
+
     try {
-        const {id}=req.params;
-        const seller = await Seller.findOne({ _id:id });
+        const { id } = req.params;
+        const seller = await Seller.findOne({ _id: id });
 
         if (!seller) {
             return res.status(404).json({
@@ -131,6 +131,7 @@ const getSingleSeller= async (req, res) => {
         });
 
 
+
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -140,62 +141,62 @@ const getSingleSeller= async (req, res) => {
     }
 
 }
-const sellerDelete= async (req,res)=>{
+const sellerDelete = async (req, res) => {
     try {
-        const {id}=req.params
-        const seller=await Seller.findByIdAndDelete(id);
-        if(!seller){
+        const { id } = req.params
+        const seller = await Seller.findByIdAndDelete(id);
+        if (!seller) {
             return res.status(404).json({
-                success:false,
-                message:"user not found"
+                success: false,
+                message: "user not found"
 
             })
         }
         res.status(200).json({
-            success:true,
-            message:"Deleted User"
+            success: true,
+            message: "Deleted User"
         })
-        
+
     } catch (error) {
         res.status(500).json({
             success: false,
             message: error.message
         })
 
-        
+
     }
 }
-const sellerUpdate = async (req,res) => {
+const sellerUpdate = async (req, res) => {
     try {
-        const {id}=req.params;
-        const {firstName,lastName,email}=req.body;
-        const seller = await Seller.findByIdAndUpdate(id,{
+        const { id } = req.params;
+        const { firstName, lastName, email } = req.body;
+        const seller = await Seller.findByIdAndUpdate(id, {
             firstName,
             lastName,
             email
         },
-    {new:true});
-       
-        if(!seller){
+            { new: true });
+
+        if (!seller) {
             return res.status(404).json({
-                success:false,
-                message:"user not found"
+                success: false,
+                message: "user not found"
             })
         }
         res.status(200).json({
-            success:true,
-            message:"Updated User",
+            success: true,
+            message: "Updated User",
             seller
         })
 
 
-        
+
     } catch (error) {
         res.status(500).json({
             success: false,
             message: error.message
         })
-        
+
     }
 }
-export { sellerLogin,sellerRegisteration, getAllSellers,getSingleSeller,sellerUpdate,sellerDelete}
+export { sellerLogin, sellerRegisteration, getAllSellers, getSingleSeller, sellerUpdate, sellerDelete }
