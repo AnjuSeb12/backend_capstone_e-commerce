@@ -115,8 +115,10 @@ const allorderView = async (req, res) => {
 }
 const orderDelete = async (req, res) => {
     try {
+        console.log("hitted")
         const { id } = req.params;
-        const orderDelete = await Order.find(id);
+        console.log(req.params.id)
+        const orderDelete = await Order.findByIdAndDelete(id);
         if (!orderDelete) {
             return res.status(404).json({
                 success: false,

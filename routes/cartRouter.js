@@ -10,10 +10,11 @@ const cartRouter = express.Router();
 
 
 
-cartRouter.post("/addcart/:userid",authenticateUser,cartAdding);
-cartRouter.get("/viewbyidcart/:userid",authenticateUser,cartViewById);
+cartRouter.post("/addcart/:userId",authenticateUser,cartAdding);
+cartRouter.get("/viewbyidcart/:userId",authenticateUser,cartViewById);
 cartRouter.put("/updatecart/:userId/:cartItemId",authenticateUser,cartUpdate);
 cartRouter.delete("/cartdelete/:userId/:cartItemId",authenticateUser,cartDelete);
+// cartRouter.delete("/cartdelete/:cartId/:cartItemId",authenticateUser,cartDelete);
 
 
 export default cartRouter;

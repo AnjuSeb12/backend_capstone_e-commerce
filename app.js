@@ -15,8 +15,6 @@ app.use(cors({
 }));
 
 
-
-
 app.use(express.json());
 app.use(cookieParser())
 
@@ -26,13 +24,6 @@ app.use("/api/v1/seller",sellerRouter);
 app.use("/api/v1/product",productRoute);
 app.use("/api/v1/order",orderRouter);
 app.use("/api/v1/cart",cartRouter);
-
-
-
-
-
-
-
 
 
 app.use((err,req,res,next)=> {

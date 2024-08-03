@@ -1,61 +1,63 @@
 import Product from "../models/productModel.js";
 
-import {cloudinaryInstance} from "../config/cloudinary.js"
+import { cloudinaryInstance } from "../config/cloudinary.js"
 
 
 
 
 const addProduct = async (req, res) => {
     try {
-    
-     
-      if(!req.file) {
-      return res.status(400).json({success:false,message:"No file uploaded"})
-      }
-    
-      cloudinaryInstance.uploader.upload(req.file.path, async (err, result) => {
-        if (err) {
-          console.log(err, "error");
-          return res.status(500).json({
-            success: false,
-            message: "Error",
-          });
+        const { title, description, price, category } = req.body;
+        const {sellerId}= req.params;
+        console.log("hitted")
+        console.log(req.params.sellerId)
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "No file uploaded" })
         }
-        
-        const imageUrl = result.url;
-        console.log(imageUrl)
-        const body = req.body;
-        console.log(body, "body");
-  
-        const { title, description, price,category } = body;
-  
-       
-  
-        const product = new Product({
-          title,
-          description,
-          price,
-          category,
-          image:imageUrl,
+
+        cloudinaryInstance.uploader.upload(req.file.path, async (err, result) => {
+            if (err) {
+                console.log(err, "error");
+                return res.status(500).json({
+                    success: false,
+                    message: "Error",
+                });
+            }
+
+            const imageUrl = result.url;
+            console.log(imageUrl)
+
+            const product = new Product({
+                title,
+                description,
+                price,
+                category,
+                image: imageUrl,
+                seller: sellerId
+            });
+
+            console.log(product)
+            const productCreated = await product.save();
+            if (!productCreated) {
+                return res.send("product is not created");
+            }
+            return res.status(201).json({
+                success:true,
+                message:"Added product",
+                productCreated
+            });
         });
-        
-        console.log(product)
-        const productCreated = await product.save();
-        if (!productCreated) {
-          return res.send("product is not created");
-        }
-        return res.send(productCreated);
-      });
     } catch (error) {
-      console.log("something went wrong", error);
-      res.send("failed to Add product");
+        console.log("something went wrong", error);
+        res.send("failed to Add product");
     }
-  };
+};
 
 const getAllProducts = async (req, res) => {
     try {
 
-        const products = await Product.find();
+
+        const products = await Product.find().populate('seller','name email');
         if (!products) {
             return res.status(404).json({
                 success: false,
@@ -82,8 +84,9 @@ const getAllProducts = async (req, res) => {
 const getSingleProductBYId = async (req, res) => {
     try {
 
-        const { id } = req.params;
-        const product = await Product.findById({ id });
+        const { sellerId } = req.params;
+        const product = await Product.find({ seller: sellerId });
+        console.log(product)
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -108,18 +111,24 @@ const getSingleProductBYId = async (req, res) => {
 }
 const updateProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { sellerId,id} = req.params;
+        console.log(req.body)
         const { title, description, price } = req.body;
-        const productUpdate = await Product.findById(id);
-        productUpdate.title = title,
-            productUpdate.description = description,
-            productUpdate.price = price,
-            productUpdate.save();
+        const productUpdate = await Product.findOne({ _id: id, seller: sellerId });
+        productUpdate.title = title;
+        productUpdate.description = description;
+        productUpdate.price = price;
+        if (req.file) {
+            const result = await cloudinaryInstance.uploader.upload(req.file.path);
+            productUpdate.image = result.url;
+        }
+        await productUpdate.save();
+        console.log(productUpdate)
 
 
 
 
-        if (!productfind) {
+        if (!productUpdate) {
             return res.status(404).json({
                 success: false,
                 message: "not found"
@@ -143,8 +152,8 @@ const updateProduct = async (req, res) => {
 }
 const deleteProduct = async (req, res) => {
     try {
-        const { id } = req.params;
-        const deleteProduct = await Product.findByIdAndDelete(id);
+        const { id,sellerId } = req.params;
+        const deleteProduct = await Product.findOneAndDelete({_id:id,seller:sellerId});
         if (!deleteProduct) {
             return res.status(404).json({
                 success: false,

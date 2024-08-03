@@ -10,7 +10,7 @@ const orderRouter=express.Router()
 orderRouter.post("/addorder/:userId",authenticateUser,OrderAdding);
 orderRouter.get("/getorder",authenticateAdmin,allorderView);
 orderRouter.get("/getorderbyid/:userId/:orderId",authenticateUser,orderViewById)
-orderRouter.delete("/deleteorder/:id",orderDelete)
+orderRouter.delete("/deleteorder/:id",authenticateAdmin,orderDelete)
 
 // orderRouter.get('/orders/:userId/:orderId', getOrderById);
 

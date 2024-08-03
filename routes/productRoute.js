@@ -8,11 +8,11 @@ const productRoute = express.Router();
 
 
 
-productRoute.post('/addproduct',authenticateSeller,upload.single('image'),addProduct);
+productRoute.post('/addproduct/:sellerId',authenticateSeller,upload.single('image'),addProduct);
 productRoute.get('/getproducts',authenticateAdmin,getAllProducts);
-productRoute.get('/getsingleproduct/:id',authenticateSeller,getSingleProductBYId);
-productRoute.put('/update/:id',authenticateSeller,updateProduct);
-productRoute.delete('/deleteproduct/:id',authenticateSeller,deleteProduct);
+productRoute.get('/getsingleproduct/:sellerId',authenticateSeller,getSingleProductBYId);
+productRoute.put('/update/:sellerId/product/:id',authenticateSeller,upload.single('image'),updateProduct);
+productRoute.delete('/deleteproduct/:sellerId/product/:id',authenticateSeller,deleteProduct);
 
 
 

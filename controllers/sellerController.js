@@ -14,7 +14,7 @@ const sellerRegisteration = async (req, res) => {
             firstName,
             lastName,
             email,
-            role: 'admin',
+            role: 'seller',
             password: hashedPass
 
         });
@@ -22,7 +22,7 @@ const sellerRegisteration = async (req, res) => {
         if (!seller) {
             return res.status(400).json({
                 success: false,
-                message: "User Registeration Failed!",
+                message: "Seller Registeration Failed!",
             })
         }
         const token = sellerToken(seller);
@@ -43,8 +43,6 @@ const sellerRegisteration = async (req, res) => {
         })
 
     }
-
-
 
 }
 const sellerLogin = async (req, res) => {

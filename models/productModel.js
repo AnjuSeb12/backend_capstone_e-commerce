@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
-    product:{
+    title:{
         type:String,
         required:true
     },
@@ -23,7 +23,7 @@ const productSchema = new mongoose.Schema({
         type:String,
         required:true
     },
-    // seller: { type: mongoose.Schema.Types.ObjectId, ref: 'Seller', required: true },
+    seller: { type: mongoose.Schema.Types.ObjectId, ref: 'sellers', required: true },
 },
 { timestamp: true }
 
