@@ -59,7 +59,7 @@ const cartViewById = async (req, res) => {
 
 
 
-    const cartviewbyid = await Cart.find({ user: userId }).populate('cartItems.product');;
+    const cartviewbyid = await Cart.find({ user: userId }).populate('cartItems.product');
 
     if (!cartviewbyid) {
       return res.status(404).json({
@@ -113,25 +113,7 @@ const cartUpdate = async (req, res) => {
 
 }
 
-// const cartDelete = async (req, res) => {
-//   try {
-//     console.log(req.params)
-//     const { userId, cartItemId } = req.params;
-
-
-   
-//     const deletecart = await Cart.findOneAndDelete({ user: userId, _id: cartItemId });
-//     if (!deletecart) {
-//       return res.status(404).json({ message: 'Cart item not found' });
-//     }
-
-
- 
-//     res.status(200).json(deletecart);
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// }
+  
 
 const cartDelete = async (req, res) => {
   try {

@@ -6,6 +6,7 @@ import cors from "cors"
 import orderRouter from './routes/orderRouter.js';
 import cookieParser from "cookie-parser";
 import cartRouter from './routes/cartRouter.js';
+import reviewRouter from './routes/reviewRouter.js';
 
 
 const app=express()
@@ -24,6 +25,7 @@ app.use("/api/v1/seller",sellerRouter);
 app.use("/api/v1/product",productRoute);
 app.use("/api/v1/order",orderRouter);
 app.use("/api/v1/cart",cartRouter);
+app.use("/api/v1/review",reviewRouter);
 
 
 app.use((err,req,res,next)=> {
