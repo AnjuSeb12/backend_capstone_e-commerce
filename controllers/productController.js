@@ -8,9 +8,10 @@ import { cloudinaryInstance } from "../config/cloudinary.js"
 const addProduct = async (req, res) => {
     try {
         const { title, description, price, category } = req.body;
-        const {sellerId}= req.params;
+        const sellerId= req.user.id;
         console.log("hitted")
-        console.log(req.params.sellerId)
+        console.log(req.user.id)
+        console.log(req.file.path);
         if (!req.file) {
             return res.status(400).json({ success: false, message: "No file uploaded" })
         }
@@ -57,7 +58,9 @@ const getAllProducts = async (req, res) => {
     try {
 
 
-        const products = await Product.find().populate('seller','name email');
+        // const products = await Product.find().populate('seller','name email');
+        const products = await Product.find();
+
         if (!products) {
             return res.status(404).json({
                 success: false,
@@ -67,7 +70,7 @@ const getAllProducts = async (req, res) => {
         res.status(200).json({
             success: true,
             message: "All Products",
-            products
+            products,
         })
 
 
@@ -84,8 +87,8 @@ const getAllProducts = async (req, res) => {
 const getSingleProductBYId = async (req, res) => {
     try {
 
-        const { sellerId } = req.params;
-        const product = await Product.find({ seller: sellerId });
+        const  id  = req.params.id;
+        const product = await Product.find({ seller: id });
         console.log(product)
         if (!product) {
             return res.status(404).json({

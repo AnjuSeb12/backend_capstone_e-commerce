@@ -18,6 +18,7 @@ const sellerRegisteration = async (req, res) => {
             password: hashedPass
 
         });
+        
 
         if (!seller) {
             return res.status(400).json({
@@ -27,9 +28,10 @@ const sellerRegisteration = async (req, res) => {
         }
         const token = sellerToken(seller);
         res.cookie("token", token);
+        const successMessage = seller.role === 'admin' ? "Admin Registration Successfully Completed!!" : "Seller Registration Successfully Completed!!";
         res.status(201).json({
             success: true,
-            message: "Seller Registration Successfully Completed!!",
+            message: successMessage,
             seller,
             token,
             isAuthenticated: true,

@@ -9,12 +9,12 @@ function authenticateSeller(req, res, next) {
   jsonwebtoken.verify(token, process.env.SECRET_KEY, (err, user) => {
     console.log(err);
 
-    if (err) return res.send("Token not valid or missing").status(403);
+    if (err) return res.status(403).send("Token not valid or missing");
 
     req.user = user;
     console.log(req.user.role);
     if (req.user.role !== "seller" && req.user.role !== "admin") {
-      return res.send("not authenticated");
+      return res.status(403).send("not authenticated");
     }
     next();
   });

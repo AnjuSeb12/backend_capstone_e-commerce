@@ -32,6 +32,7 @@ const userRegisteration = async (req, res) => {
             user,
             token
         });
+        
 
 
     } catch (error) {

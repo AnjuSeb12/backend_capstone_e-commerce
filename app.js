@@ -7,6 +7,7 @@ import orderRouter from './routes/orderRouter.js';
 import cookieParser from "cookie-parser";
 import cartRouter from './routes/cartRouter.js';
 import reviewRouter from './routes/reviewRouter.js';
+import categoryRouter from './routes/categoryRouter.js';
 
 
 const app=express()
@@ -26,6 +27,7 @@ app.use("/api/v1/product",productRoute);
 app.use("/api/v1/order",orderRouter);
 app.use("/api/v1/cart",cartRouter);
 app.use("/api/v1/review",reviewRouter);
+app.use("/api/v1/category",categoryRouter);
 
 
 app.use((err,req,res,next)=> {

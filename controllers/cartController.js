@@ -9,7 +9,7 @@ import Product from "../models/productModel.js";
 const cartAdding = async (req, res) => {
   try {
     console.log("hitted")
-    const { userId } = req.params;
+    const userId  = req.user.id;
     const { productId, quantity } = req.body;
 
 

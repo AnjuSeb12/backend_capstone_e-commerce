@@ -9,7 +9,7 @@ const sellerSchema = new mongoose.Schema(
     },
     lastName: {
       type: String,
-      required: true,
+      required:true,
       maxLength: 50,
     },
     email: {
