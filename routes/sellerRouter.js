@@ -9,7 +9,7 @@ const sellerRouter=express.Router();
 
 sellerRouter.post("/sellersignup",sellerRegisteration);
 sellerRouter.post("/sellerlogin",sellerLogin);
-sellerRouter.get("/sellers",authenticateAdmin,getAllSellers);
+sellerRouter.get("/sellers",getAllSellers);
 sellerRouter.get("/sellerbyid/:id",getSingleSeller);
 sellerRouter.delete("/deleteseller/:id",authenticateSeller,sellerDelete);
 sellerRouter.put("/updateseller/:id",authenticateSeller,sellerUpdate);
