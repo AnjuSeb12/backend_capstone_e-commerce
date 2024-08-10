@@ -10,7 +10,7 @@ const productRoute = express.Router();
 
 productRoute.post('/addproduct',authenticateSeller,upload.single('image'),addProduct);
 productRoute.get('/getproducts',getAllProducts);
-productRoute.get('/getsingleproduct/:id',authenticateSeller,getSingleProductBYId);
+productRoute.get('/getsingleproduct',authenticateSeller,getSingleProductBYId);
 productRoute.put('/update/:sellerId/product/:id',authenticateSeller,upload.single('image'),updateProduct);
 productRoute.delete('/deleteproduct/:sellerId/product/:id',authenticateSeller,deleteProduct);
 

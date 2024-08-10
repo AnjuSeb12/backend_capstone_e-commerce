@@ -88,8 +88,8 @@ const getAllProducts = async (req, res) => {
 const getSingleProductBYId = async (req, res) => {
     try {
 
-        const  id  = req.params.id;
-        const product = await Product.find({ seller: id });
+        const  sellerId  = req.user.id;
+        const product = await Product.find({ seller: sellerId });
         console.log(product)
         if (!product) {
             return res.status(404).json({
