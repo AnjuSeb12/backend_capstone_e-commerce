@@ -7,7 +7,7 @@ import { cloudinaryInstance } from "../config/cloudinary.js"
 
 const addProduct = async (req, res) => {
     try {
-        const { title, description, price, category } = req.body;
+        const { title, description, price, category,stock } = req.body;
         const sellerId= req.user.id;
         console.log("hitted")
         console.log(req.user.id)
@@ -33,6 +33,7 @@ const addProduct = async (req, res) => {
                 description,
                 price,
                 category,
+                stock,
                 image: imageUrl,
                 seller: sellerId
             });

@@ -9,7 +9,7 @@ import Product from "../models/productModel.js";
 const cartAdding = async (req, res) => {
   try {
     console.log("hitted")
-    const userId  = req.user.id;
+    const userId = req.params;
     const { productId, quantity } = req.body;
 
 
@@ -17,6 +17,11 @@ const cartAdding = async (req, res) => {
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
+    }
+    // Check if there's enough stock 
+
+    if (product.stock < quantity) {
+      return res.status(400).json({ message: 'Insufficient stock available' });
     }
 
 
@@ -31,6 +36,9 @@ const cartAdding = async (req, res) => {
     const cartItem = cart.cartItems.find(item => item.product.toString() === productId);
 
     if (cartItem) {
+      if (product.stock < cartItem.quantity + quantity) {
+        return res.status(400).json({ message: 'Insufficient stock available' });
+      }
 
       cartItem.quantity += Number(quantity);
       cartItem.totalPrice = cartItem.quantity * product.price;
@@ -39,6 +47,9 @@ const cartAdding = async (req, res) => {
       cart.cartItems.push({ product: productId, quantity, totalPrice: product.price * quantity });
     }
 
+    // Decrease the product's stock
+    product.stock -= quantity;
+    await product.save();
 
     await cart.save();
     console.log(cart)
@@ -48,7 +59,7 @@ const cartAdding = async (req, res) => {
 
     res.status(400).json({ message: error.message });
   }
-}
+};
 
 
 
@@ -59,14 +70,14 @@ const cartViewById = async (req, res) => {
 
 
 
-    const cartviewbyid = await Cart.find({ user: userId }).populate('cartItems.product');
+    const cartviewbyid = await Cart.findOne({ user: userId }).populate('cartItems.product');
 
     if (!cartviewbyid) {
       return res.status(404).json({
         success: false,
-        message: "not found"
+        message: "Cart not found"
 
-      })
+      });
     }
     res.status(200).json({
       success: true,
@@ -83,6 +94,10 @@ const cartViewById = async (req, res) => {
 
   }
 }
+
+
+
+
 const cartUpdate = async (req, res) => {
   try {
     const { userId, cartItemId } = req.params;
@@ -96,25 +111,65 @@ const cartUpdate = async (req, res) => {
     }
 
     const cartItem = cart.cartItems.id(cartItemId);
-
-    if (cartItem) {
-      cartItem.quantity = quantity;
-      const product = await Product.findById(cartItem.product);
-      cartItem.totalPrice = cartItem.quantity * product.price;
-
-      await cart.save();
-      res.status(200).json(cart);
-    } else {
-      res.status(404).json({ message: 'Cart item not found' });
+    if (!cartItem) {
+      return res.status(404).json({ message: 'Cart item not found' });
     }
+
+    const product = await Product.findById(cartItem.product);
+
+    // Check if there's enough stock for the update
+    const stockChange = quantity - cartItem.quantity;
+    if (product.stock < stockChange) {
+      return res.status(400).json({ message: 'Insufficient stock available' });
+    }
+
+    // Update the cart item quantity and total price
+
+    cartItem.quantity = quantity;
+    
+    cartItem.totalPrice = cartItem.quantity * product.price;
+
+
+    // Adjust the product's stock accordingly
+    product.stock -= stockChange;
+    await product.save();
+    await cart.save();
+    res.status(200).json(cart);
+
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 
 }
 
-  
 
+
+// const cartDelete = async (req, res) => {
+//   try {
+//     const { userId, cartItemId } = req.params;
+
+//     const cart = await Cart.findOne({ user: userId });
+//     if (!cart) {
+//       return res.status(404).json({ message: 'Cart not found' });
+//     }
+
+//     const itemIndex = cart.cartItems.findIndex(item => item._id.toString() === cartItemId);
+//     if (itemIndex === -1) {
+//       return res.status(404).json({ message: 'Cart item not found' });
+//     }
+
+//     cart.cartItems.splice(itemIndex, 1);
+//     await cart.save();
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Deleted you requested cartitem",
+//       cart
+//     });
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// };
 const cartDelete = async (req, res) => {
   try {
     const { userId, cartItemId } = req.params;
@@ -129,12 +184,20 @@ const cartDelete = async (req, res) => {
       return res.status(404).json({ message: 'Cart item not found' });
     }
 
+    const cartItem = cart.cartItems[itemIndex];
+
+    // Restore the stock when the item is removed from the cart
+    const product = await Product.findById(cartItem.product);
+    product.stock += cartItem.quantity;
+    await product.save();
+
+    // Remove the item from the cart
     cart.cartItems.splice(itemIndex, 1);
     await cart.save();
 
     res.status(200).json({
-      success:true,
-      message:"Deleted you requested cartitem",
+      success: true,
+      message: "Deleted requested cart item",
       cart
     });
   } catch (error) {
@@ -142,4 +205,37 @@ const cartDelete = async (req, res) => {
   }
 };
 
-export { cartDelete, cartAdding, cartViewById, cartUpdate }
+
+
+// Controller to clear the entire cart for a user
+const clearCart = async (req, res) => {
+    try {
+        const userId = req.user.id; // Assuming the user ID is available in req.user after authentication
+
+        // Find the cart for the user
+        const cart = await Cart.findOne({ user: userId });
+
+        if (!cart) {
+            return res.status(404).json({ message: 'Cart not found' });
+        }
+
+        // Clear the cart items
+        cart.cartItems = [];
+
+        // Save the empty cart
+        await cart.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Cart has been cleared successfully",
+            cart
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+
+
+export { clearCart,cartDelete, cartAdding, cartViewById, cartUpdate }

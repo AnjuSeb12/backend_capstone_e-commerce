@@ -12,6 +12,8 @@ const userRegisteration = async (req, res) => {
             firstName,
             lastName,
             email,
+            role:'user',
+        
             password: hashedPass
 
         });
@@ -23,7 +25,7 @@ const userRegisteration = async (req, res) => {
             })
         }
 
-        const token = generateToken(email);
+        const token = generateToken(user);
 
         res.cookie("token", token)
         res.status(201).json({
@@ -63,16 +65,18 @@ const userLogin = async (req, res) => {
         if (!isValid) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid credentials!'
+                message: 'Invalid credentials!',
+                isAuthenticated:false
             });
         }
-        const token = generateToken(email);
+        const token = generateToken(user);
         res.cookie("token", token);
         res.status(201).json({
             success: true,
             message: "Loged in Successfully!",
             token,
             user,
+            isAuthenticated:true
             
         });
 

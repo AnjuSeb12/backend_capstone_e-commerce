@@ -23,9 +23,14 @@ const productSchema = new mongoose.Schema({
         type:String,
         required:true
     },
+    stock: {
+        type: Number,
+        required: true, 
+        default: 0,
+      },
     seller: { type: mongoose.Schema.Types.ObjectId, ref: 'sellers', required: true },
 },
-{ timestamp: true }
+{ timestamps: true }
 
 )
 const Product = mongoose.model("products",productSchema)
