@@ -10,10 +10,10 @@ const cartRouter = express.Router();
 
 
 
-cartRouter.post("/addcart/:userId",authenticateUser,cartAdding);
-cartRouter.get("/viewbyidcart/:userId",authenticateUser,cartViewById);
-cartRouter.put("/updatecart/:userId/:cartItemId",authenticateUser,cartUpdate);
-cartRouter.delete("/cartdelete/:userId/:cartItemId",authenticateUser,cartDelete);
+cartRouter.post("/addcart/:productId",authenticateUser,cartAdding);
+cartRouter.get("/viewbyidcart",authenticateUser,cartViewById);
+cartRouter.put("/updatecart/:cartItemId",authenticateUser,cartUpdate);
+cartRouter.delete("/cartdelete/:cartItemId",authenticateUser,cartDelete);
 // cartRouter.delete("/cartdelete/:cartId/:cartItemId",authenticateUser,cartDelete);
 cartRouter.delete('/clear',authenticateUser,clearCart)
 

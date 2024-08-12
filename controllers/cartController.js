@@ -9,8 +9,9 @@ import Product from "../models/productModel.js";
 const cartAdding = async (req, res) => {
   try {
     console.log("hitted")
-    const userId = req.params;
-    const { productId, quantity } = req.body;
+    const userId = req.user.id;
+    const {productId}=req.params;
+    const { quantity} = req.body;
 
 
 
@@ -41,10 +42,10 @@ const cartAdding = async (req, res) => {
       }
 
       cartItem.quantity += Number(quantity);
-      cartItem.totalPrice = cartItem.quantity * product.price;
+      cartItem.totalPrice = cartItem.quantity * cartItem.price;
     } else {
 
-      cart.cartItems.push({ product: productId, quantity, totalPrice: product.price * quantity });
+      cart.cartItems.push({ product: productId, price:product.price*quantity,quantity, totalPrice: product.price * quantity });
     }
 
     // Decrease the product's stock
@@ -54,7 +55,10 @@ const cartAdding = async (req, res) => {
     await cart.save();
     console.log(cart)
 
-    res.status(201).json(cart);
+    res.status(201).json({
+      message:"Added cart items",
+      cart
+    });
   } catch (error) {
 
     res.status(400).json({ message: error.message });
@@ -65,7 +69,7 @@ const cartAdding = async (req, res) => {
 
 const cartViewById = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId  = req.user.id;
     console.log(userId)
 
 
@@ -94,53 +98,55 @@ const cartViewById = async (req, res) => {
 
   }
 }
-
-
-
-
 const cartUpdate = async (req, res) => {
   try {
-    const { userId, cartItemId } = req.params;
-    const { quantity } = req.body;
+      const userId = req.user.id;
+      const { cartItemId } = req.params;
+      const { quantity } = req.body;
 
+      if (quantity <= 0) {
+          return res.status(400).json({ message: 'Quantity must be greater than zero' });
+      }
 
-    const cart = await Cart.findOne({ user: userId });
+      const cart = await Cart.findOne({ user: userId });
+      if (!cart) {
+          return res.status(404).json({ message: 'Cart not found' });
+      }
 
-    if (!cart) {
-      return res.status(404).json({ message: 'Cart not found' });
-    }
+      const cartItem = cart.cartItems.id(cartItemId);
+      if (!cartItem) {
+          return res.status(404).json({ message: 'Cart item not found' });
+      }
 
-    const cartItem = cart.cartItems.id(cartItemId);
-    if (!cartItem) {
-      return res.status(404).json({ message: 'Cart item not found' });
-    }
+      const product = await Product.findById(cartItem.product);
+      if (!product) {
+          return res.status(404).json({ message: 'Product not found' });
+      }
 
-    const product = await Product.findById(cartItem.product);
+      const stockChange = quantity - cartItem.quantity;
+      if (product.stock < stockChange) {
+          return res.status(400).json({ message: 'Insufficient stock available' });
+      }
 
-    // Check if there's enough stock for the update
-    const stockChange = quantity - cartItem.quantity;
-    if (product.stock < stockChange) {
-      return res.status(400).json({ message: 'Insufficient stock available' });
-    }
+      cartItem.quantity = quantity;
+      cartItem.totalPrice = quantity * product.price;
 
-    // Update the cart item quantity and total price
+      product.stock -= stockChange;
+      await product.save();
+      await cart.save();
+      console.log(cart)
 
-    cartItem.quantity = quantity;
-    
-    cartItem.totalPrice = cartItem.quantity * product.price;
-
-
-    // Adjust the product's stock accordingly
-    product.stock -= stockChange;
-    await product.save();
-    await cart.save();
-    res.status(200).json(cart);
-
+      res.status(200).json({ cartItem }); // Respond with the updated cart item
   } catch (error) {
-    res.status(400).json({ message: error.message });
+      console.error("Error updating cart:", error.message);
+      res.status(500).json({ message: 'Server error' });
   }
+};
 
-}
+
+
+
+
 
 
 
@@ -172,7 +178,8 @@ const cartUpdate = async (req, res) => {
 // };
 const cartDelete = async (req, res) => {
   try {
-    const { userId, cartItemId } = req.params;
+    const userId=req.user.id;
+    const { cartItemId } = req.params;
 
     const cart = await Cart.findOne({ user: userId });
     if (!cart) {
@@ -209,31 +216,41 @@ const cartDelete = async (req, res) => {
 
 // Controller to clear the entire cart for a user
 const clearCart = async (req, res) => {
-    try {
-        const userId = req.user.id; // Assuming the user ID is available in req.user after authentication
+  try {
+      const userId = req.user.id; // Assuming the user ID is available in req.user after authentication
 
-        // Find the cart for the user
-        const cart = await Cart.findOne({ user: userId });
+      // Find the cart for the user
+      const cart = await Cart.findOne({ user: userId });
 
-        if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
-        }
+      if (!cart) {
+          return res.status(404).json({ message: 'Cart not found' });
+      }
 
-        // Clear the cart items
-        cart.cartItems = [];
+      // Iterate over each cart item using forEach to restore the stock
+      cart.cartItems.forEach(async (cartItem) => {
+          const product = await Product.findById(cartItem.product);
+          if (product) {
+              product.stock += cartItem.quantity;
+              await product.save(); // Save the updated stock
+          }
+      });
 
-        // Save the empty cart
-        await cart.save();
+      // Clear the cart items
+      cart.cartItems = [];
 
-        res.status(200).json({
-            success: true,
-            message: "Cart has been cleared successfully",
-            cart
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+      // Save the empty cart
+      await cart.save();
+
+      res.status(200).json({
+          success: true,
+          message: "Cart has been cleared successfully, and stock has been updated",
+          cart
+      });
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
 };
+
 
 
 
