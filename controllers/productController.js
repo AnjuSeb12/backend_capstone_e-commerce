@@ -1,6 +1,7 @@
 import Product from "../models/productModel.js";
 
 import { cloudinaryInstance } from "../config/cloudinary.js"
+import Seller from "../models/sellerModel.js";
 
 
 
@@ -60,7 +61,7 @@ const getAllProducts = async (req, res) => {
 
 
         // const products = await Product.find().populate('seller','name email');
-        const products = await Product.find();
+        const products = await Product.find().populate('seller', 'firstName email');
 
         if (!products) {
             return res.status(404).json({

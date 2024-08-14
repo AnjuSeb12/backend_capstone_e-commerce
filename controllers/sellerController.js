@@ -92,7 +92,7 @@ const getAllSellers = async (req, res) => {
 
 
     try {
-        const sellers = await Seller.find();
+        const sellers = await Seller.find(); ;
 
         if (!sellers) {
             return res.status(404).json({
