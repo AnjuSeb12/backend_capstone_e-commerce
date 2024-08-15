@@ -1,5 +1,5 @@
 import express from 'express';
-import { addProduct, deleteProduct, getAllProducts, getSingleProductBYId, updateProduct } from '../controllers/productController.js';
+import { addProduct, deleteProduct, getAllProducts, getProductForDetail, getSingleProductBYId, updateProduct } from '../controllers/productController.js';
 import upload from '../middlewares/uploadMiddleware.js';
 import authenticateSeller from '../middlewares/sellerMiddleware.js';
 import authenticateAdmin from '../middlewares/adminMiddleware.js';
@@ -13,6 +13,7 @@ productRoute.get('/getproducts',getAllProducts);
 productRoute.get('/getsingleproduct',authenticateSeller,getSingleProductBYId);
 productRoute.put('/update/:sellerId/product/:id',authenticateSeller,upload.single('image'),updateProduct);
 productRoute.delete('/deleteproduct/:sellerId/product/:id',authenticateSeller,deleteProduct);
+productRoute.get("/products/:id",getProductForDetail);
 
 
 

@@ -86,6 +86,16 @@ const getAllProducts = async (req, res) => {
     }
 
 }
+const getProductForDetail= async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id);
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ message: "Product not found" });
+    }
+  };
+
+
 const getSingleProductBYId = async (req, res) => {
     try {
 
@@ -182,4 +192,4 @@ const deleteProduct = async (req, res) => {
 
 
 }
-export { addProduct, getAllProducts, getSingleProductBYId, updateProduct, deleteProduct }
+export { addProduct, getAllProducts, getSingleProductBYId, updateProduct, deleteProduct,getProductForDetail }
