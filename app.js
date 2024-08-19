@@ -10,6 +10,8 @@ import reviewRouter from './routes/reviewRouter.js';
 import categoryRouter from './routes/categoryRouter.js';
 import filterRouter from './routes/productFilterRouter.js';
 import paymentRouter from './routes/paymentRoute.js';
+import searchRouter from './routes/searchRouter.js';
+
 
 
 
@@ -32,6 +34,7 @@ app.use("/api/v1/cart",cartRouter);
 app.use("/api/v1/review",reviewRouter);
 app.use("/api/v1/category",categoryRouter);
 app.use("/api/v1/filter",filterRouter);
+app.use("/api/v1/searches",searchRouter);
 
 
 app.use((err,req,res,next)=> {

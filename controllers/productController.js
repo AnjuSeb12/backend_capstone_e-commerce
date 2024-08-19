@@ -8,7 +8,7 @@ import Seller from "../models/sellerModel.js";
 
 const addProduct = async (req, res) => {
     try {
-        const { title, description, price, category,stock } = req.body;
+        const { title, description, price, category,stock,subcategory } = req.body;
         const sellerId= req.user.id;
         console.log("hitted")
         console.log(req.user.id)
@@ -34,6 +34,7 @@ const addProduct = async (req, res) => {
                 description,
                 price,
                 category,
+                subcategory,
                 stock,
                 image: imageUrl,
                 seller: sellerId
@@ -44,7 +45,7 @@ const addProduct = async (req, res) => {
             if (!productCreated) {
                 return res.send("product is not created");
             }
-            return res.status(201).json({
+             res.status(201).json({
                 success:true,
                 message:"Added product",
                 productCreated

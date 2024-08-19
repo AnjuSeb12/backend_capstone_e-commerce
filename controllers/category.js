@@ -5,9 +5,9 @@ import Category from "../models/categoryModel.js";
 const addCategory = async (req, res) => {
   try {
     console.log(req.body)
-    const { name } = req.body;
+    const { name,subcategories } = req.body;
     const category = new Category(
-        { name }
+        { name,subcategories }
     );
     const categoryCreated = await category.save();
     res.status(201).json({
