@@ -1,16 +1,22 @@
 import mongoose from "mongoose";
-
 const paymentSchema = new mongoose.Schema({
-  razorpay_order_id: {
+  stripePaymentIntentId: {
     type: String,
     required: true,
   },
-  razorpay_payment_id: {
+  paymentStatus: {
     type: String,
+    enum: ["Pending", "Paid"],
+    default: "Pending",
+  },
+  order: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Order",
     required: true,
   },
-  razorpay_signature: {
-    type: String,
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
   date: {

@@ -9,8 +9,10 @@ import cartRouter from './routes/cartRouter.js';
 import reviewRouter from './routes/reviewRouter.js';
 import categoryRouter from './routes/categoryRouter.js';
 import filterRouter from './routes/productFilterRouter.js';
-import paymentRouter from './routes/paymentRoute.js';
+// import paymentRouter from './routes/paymentRoute.js';
 import searchRouter from './routes/searchRouter.js';
+import orderRouter from './routes/orderRouter.js';
+
 
 
 
@@ -29,7 +31,7 @@ app.use(cookieParser())
 app.use("/api/v1/user",userRouter);
 app.use("/api/v1/seller",sellerRouter);
 app.use("/api/v1/product",productRoute);
-// app.use("/api/v1/order",paymentRouter);
+app.use("/api/v1/orders",orderRouter);
 app.use("/api/v1/cart",cartRouter);
 app.use("/api/v1/review",reviewRouter);
 app.use("/api/v1/category",categoryRouter);

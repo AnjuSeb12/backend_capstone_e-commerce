@@ -1,278 +1,201 @@
-
-import crypto from "crypto";
-import Payment from "../models/paymentModel.js";
-// import razorpayInstance from "../config/payment.js";
+import Stripe from "stripe";
 import Order from "../models/orderModel.js";
+import Payment from "../models/paymentModel.js"
+import Product from "../models/productModel.js";
+import Cart from "../models/cartModel.js";
 
 
 
-const orderAdding= async (req, res) => {
-  const { userId, orderItems, shippingAddress } = req.body;
 
-  try {
-    const order = new Order({
-      user: userId,
-      orderItems,
-      shippingAddress,
-    });
-
-    const newOrder = await order.save();
-
-    if (!newOrder) {
-      return res.status(400).json({
-        success: false,
-        message: "Failed to create order",
-      });
-    }
-
-    const totalAmount = orderItems.reduce((total, item) => total + item.totalPrice, 0) * 100; // in paise
-
-    const options = {
-      amount: totalAmount,
-      currency: "INR",
-      receipt: `receipt_order_${newOrder._id}`,
-    };
-
-    razorpayInstance.orders.create(options, (error, paymentOrder) => {
-      if (error) {
-        return res.status(500).json({ message: "Payment initiation failed" });
-      }
-
-      res.status(201).json({
-        success: true,
-        order: newOrder,
-        paymentOrderId: paymentOrder.id,
-      });
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 
-
-// 
-
-const verifyPayment=async (req, res) => {
+export const orderAdding = async (req, res) => {
     try {
+        console.log("hittedhhh")
+        console.log("Received request to add order");
 
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+        const userId = req.user.id;
+        console.log(req.body.orderItems)
+        const { orderItems, shippingAddress } = req.body;
 
- 
-    const sign = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(sign.toString())
-      .digest("hex");
+        if (!orderItems || !shippingAddress) {
+            return res.status(400).json({
+                success: false,
+                message: 'Order items and shipping address are required.',
+            });
+        }
 
-    if (expectedSign === razorpay_signature) {
-      const payment = new Payment({
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature,
-      });
+        for (const item of orderItems) {
+            if (!item.productId || !item.title || !item.quantity || !item.price || !item.totalPrice) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Order item fields are missing.',
+                });
+            }
+        }
 
-      await payment.save();
+        const totalAmount = orderItems.reduce((total, item) => total + item.totalPrice, 0) * 100;
 
-      await Order.findOneAndUpdate(
-        { _id: razorpay_order_id.split("_")[2] },
-        { paymentStatus: "Paid" }
-      );
+        const order = new Order({
+            user: userId,
+            orderItems,
+            shippingAddress,
+        });
 
-      res.json({ message: "Payment verified successfully" });
-    } else {
-      res.status(400).json({ message: "Invalid payment signature" });
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-// 
-const allorderView = async (req, res) => {
-    try {
-      const orders = await Order.find().populate('user').populate('orderItems.product');
-      res.json(orders);
+        const newOrder = await order.save();
+     
+
+        if (!newOrder) {
+            return res.status(400).json({
+                success: false,
+                message: 'Failed to create order.',
+            });
+        }
+
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: totalAmount,
+            currency: 'usd',
+            metadata: { orderId: newOrder._id.toString() },
+        });
+        await Cart.deleteMany({ user: userId });
+
+        res.status(201).json({
+            success: true,
+            order: newOrder,
+            clientSecret: paymentIntent.client_secret,
+        });
     } catch (error) {
-      res.status(500).json({ message: 'Internal Server Error' });
+        console.error("Error creating order:", error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error',
+            error: error.message,
+        });
     }
-  };
+};
+export const verifyPayment = async (req, res) => {
+    console.log("verification hitted");
+    console.log(req.body);
 
-//   
+    const userId = req.user.id;
+    const { paymentIntentId } = req.body;
 
-const orderViewById = async (req, res) => {
-    const userId=req.user.id
+    try {
+       
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        if (paymentIntent.status === "succeeded") {
+           
+            const orderId = paymentIntent.metadata.orderId;
+            const order = await Order.findById(orderId);
+
+            if (!order) {
+                return res.status(404).json({ message: "Order not found" });
+            }
+            // update stock
+            for (const item of order.orderItems) {
+                await Product.findByIdAndUpdate(
+                    item.productId,
+                    { $inc: { stock: -item.quantity } }
+                );
+            }
+
+     
+            const payment = new Payment({
+                stripePaymentIntentId: paymentIntentId,
+                paymentStatus: "Paid",
+                order: orderId,
+                user: userId,
+            });
+
+            await payment.save();
+
+            await Order.findByIdAndUpdate(orderId, { paymentStatus: "Paid" });
+
+            res.json({ message: "Payment verified successfully" });
+        } else {
+            res.status(400).json({ message: "Payment not successful" });
+        }
+    } catch (error) {
+        console.error("Error verifying payment:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+// cancel Payment
+export const cancelPayment = async (req, res) => {
+    const { orderId } = req.body;
+
+    try {
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        // Restore stock for each item in the order
+        for (const item of order.orderItems) {
+            await Product.findByIdAndUpdate(
+                item.productId,
+                { $inc: { stock: item.quantity } }
+            );
+        }
+
+        await Order.findByIdAndUpdate(orderId, { paymentStatus: "Canceled" });
+
+        res.json({ message: "Order canceled and stock restored" });
+    } catch (error) {
+        console.error("Error canceling order:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+
+
+
+export const allOrderView = async (req, res) => {
+    try {
+        const orders = await Order.find()
+            .populate('user')
+            .populate('orderItems.product');
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+export const orderViewById = async (req, res) => {
+    const userId = req.user.id;
     const { orderId } = req.params;
-  
+
     try {
-      const order = await Order.findOne({ _id: orderId, user: userId })
-        .populate('user')
-        .populate('orderItems.product');
-  
-      if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-  
-      res.json(order);
+        const order = await Order.findOne({ _id: orderId, user: userId })
+            .populate('user')
+            .populate('orderItems.product');
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        res.json(order);
     } catch (error) {
-      res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-  };
+};
 
-//   
-
-const orderDelete = async (req, res) => {
+export const orderDelete = async (req, res) => {
     const { id } = req.params;
-  
+
     try {
-      const order = await Order.findByIdAndDelete(id);
-  
-      if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-  
-      res.json({ message: 'Order deleted successfully' });
+        const order = await Order.findByIdAndDelete(id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        res.json({ message: 'Order deleted successfully' });
     } catch (error) {
-      res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-  };
-  
-
-
-
-
-export {orderAdding,verifyPayment,allorderView,orderViewById,orderDelete};
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const OrderAdding = async (req, res) => {
-//     try {
-//         const { userId } = req.params;
-//         const { orderItems, shippingAddress, paymentStatus } = req.body;
-
-
-//         const order = await Order({
-//             user: userId,
-//             orderItems,
-
-//             shippingAddress,
-//             paymentStatus
-//         })
-//         const newAddingOrder = await order.save();
-//         if (!newAddingOrder) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "No Order items"
-
-//             })
-//         }
-//         res.status(201).json({
-//             success: true,
-//             message: "Added order",
-//             newAddingOrder
-//         })
-
-
-
-//     } catch (error) {
-//         return res.status(500).json({
-//             success: false,
-//             message: error.message
-//         })
-
-//     }}
-   
-// const orderViewById = async (req, res) => {
-//     try{
-//     const { userId,orderId } = req.params;
-    
-//     const order = await Order.findOne({ user: userId, _id: orderId }).populate('orderItems.product');
-//         if (!order) {
-//             return res.status(404).json({
-//                 successfalse,
-//                 message: "not found"
-
-//             })
-//         }
-//         res.status(200).json({
-//             success: true,
-//             message: "Success",
-//             order
-//         })
-
-
-//     } catch (error) {
-//         return res.status(500).json({
-//             success: false,
-//             message: error.message
-//         })
-
-//     }
-// }
-// const allorderView = async (req, res) => {
-//     try {
-//         const orderview = await Order.find();
-//         if (!orderview) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "not found orders"
-//             })
-//         }
-//         res.status(200).json({
-//             success: true,
-//             message: "Success",
-//             orderview
-//         })
-
-
-//     } catch (error) {
-//         return res.status(500).json({
-//             success: false,
-//             message: "error.message"
-//         })
-
-//     }
-// }
-// const orderDelete = async (req, res) => {
-//     try {
-//         console.log("hitted")
-//         const { id } = req.params;
-//         console.log(req.params.id)
-//         const orderDelete = await Order.findByIdAndDelete(id);
-//         if (!orderDelete) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "not found orders"
-//             })
-//         }
-//         res.status(200).json({
-//             success: true,
-//             message: "Success Deleted",
-
-//         })
-
-
-//     } catch (error) {
-//         return res.status(500).json({
-//             success: false,
-//             message: "error.message"
-//         })
-
-//     }
-
-// }
-
-
-
-
-
-// export { orderDelete, allorderView, OrderAdding, orderViewById}
+};

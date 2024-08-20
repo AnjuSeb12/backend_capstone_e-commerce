@@ -1,19 +1,29 @@
 import express from "express"
-import { allorderView, OrderAdding, orderDelete, orderViewById} from "../controllers/orderController.js"
-import authenticateSeller from "../middlewares/sellerMiddleware.js";
+import { allOrderView, cancelPayment, orderAdding, orderDelete, orderViewById,verifyPayment} from "../controllers/orderController.js"
 import authenticateUser from "../middlewares/userMiddleware.js";
-import authenticateAdmin from "../middlewares/adminMiddleware.js";
+
+
 
 
 
 const orderRouter=express.Router()
-orderRouter.post("/addorder/:userId",authenticateUser,OrderAdding);
-orderRouter.get("/getorder",authenticateAdmin,allorderView);
-orderRouter.get("/getorderbyid/:userId/:orderId",authenticateUser,orderViewById)
-orderRouter.delete("/deleteorder/:id",authenticateAdmin,orderDelete)
 
-// orderRouter.get('/orders/:userId/:orderId', getOrderById);
 
+orderRouter.post('/add', authenticateUser, orderAdding);
+
+
+orderRouter.post('/verify-payment', authenticateUser, verifyPayment);
+
+
+orderRouter.get('/all', authenticateUser, allOrderView);
+
+
+orderRouter.get('/:orderId', authenticateUser, orderViewById);
+
+
+orderRouter.delete('/:id', authenticateUser, orderDelete);
+
+orderRouter.post('/cancel',cancelPayment)
 
 
 
