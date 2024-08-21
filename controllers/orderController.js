@@ -12,7 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const orderAdding = async (req, res) => {
     try {
-        console.log("hittedhhh")
+        console.log("hittedhhhadding order")
         console.log("Received request to add order");
 
         const userId = req.user.id;
@@ -44,7 +44,7 @@ export const orderAdding = async (req, res) => {
         });
 
         const newOrder = await order.save();
-     
+
 
         if (!newOrder) {
             return res.status(400).json({
@@ -82,11 +82,11 @@ export const verifyPayment = async (req, res) => {
     const { paymentIntentId } = req.body;
 
     try {
-       
+
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
         if (paymentIntent.status === "succeeded") {
-           
+
             const orderId = paymentIntent.metadata.orderId;
             const order = await Order.findById(orderId);
 
@@ -101,7 +101,7 @@ export const verifyPayment = async (req, res) => {
                 );
             }
 
-     
+
             const payment = new Payment({
                 stripePaymentIntentId: paymentIntentId,
                 paymentStatus: "Paid",
@@ -122,6 +122,36 @@ export const verifyPayment = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+//correct code
+export const cancelOrder = async (req, res) => {
+    try {
+        console.log("hitted")
+        console.log(req.user.id)
+        const userId = req.user.id; 
+        console.log(req.params.orderId)
+        const orderId = req.params.orderId; 
+        if (!orderId || !userId) {
+            return res.status(400).json({ error: 'Invalid orderId or userId' });
+        }
+
+        const order = await Order.findOne({ _id: orderId, user: userId });
+        console.log('Order found:', order);
+
+        if (order) {
+            order.paymentStatus = 'Canceled'; 
+            await order.save();
+
+           
+            res.json({ message: 'Order canceled successfully' });
+        } else {
+            res.status(404).json({ error: 'Order not found or not authorized to cancel this order' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Error canceling order' });
+    }
+};
+
 // cancel Payment
 export const cancelPayment = async (req, res) => {
     const { orderId } = req.body;
@@ -151,14 +181,28 @@ export const cancelPayment = async (req, res) => {
 };
 
 
-
-
-
-export const allOrderView = async (req, res) => {
+export const orderUser = async (req, res) => {
     try {
+      
+        console.log("hitt")
+        const user = req.user.id;
+        const orders = await Order.find({ user});
+        res.json({ orders });
+    } catch (error) {
+        console.error("Error fetching orders:", error); 
+        
+        res.status(500).json({ error: 'Error fetching orders' });
+    }
+};
+
+
+export const getAllOrders = async (req, res) => {
+    try {
+        console.log("adminhitted")
         const orders = await Order.find()
-            .populate('user')
-            .populate('orderItems.product');
+            .populate('user','name email')
+            // .populate('orderItems.product');
+            console.log(orders)
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: 'Internal Server Error' });
@@ -185,17 +229,26 @@ export const orderViewById = async (req, res) => {
 };
 
 export const orderDelete = async (req, res) => {
-    const { id } = req.params;
-
     try {
-        const order = await Order.findByIdAndDelete(id);
+        const { orderId } = req.params;
+        const userId = req.user.id; // Assuming req.user is set by authentication middleware
+
+        // Find the order by ID and ensure it belongs to the authenticated user
+        const order = await Order.findOne({ _id: orderId, user: userId });
 
         if (!order) {
-            return res.status(404).json({ message: 'Order not found' });
+            return res.status(404).json({ error: 'Order not found or not authorized to delete this order' });
         }
+
+        // Delete the order
+        await Order.deleteOne({ _id: orderId });
 
         res.json({ message: 'Order deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Error deleting order:', error);
+        res.status(500).json({ error: 'Error deleting order' });
     }
 };
+
+
+

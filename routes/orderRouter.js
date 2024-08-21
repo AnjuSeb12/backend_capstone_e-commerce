@@ -1,6 +1,7 @@
 import express from "express"
-import { allOrderView, cancelPayment, orderAdding, orderDelete, orderViewById,verifyPayment} from "../controllers/orderController.js"
+import { getAllOrders, cancelOrder, cancelPayment, orderUser, orderAdding, orderDelete, orderViewById,verifyPayment} from "../controllers/orderController.js"
 import authenticateUser from "../middlewares/userMiddleware.js";
+import authenticateAdmin from "../middlewares/adminMiddleware.js";
 
 
 
@@ -13,17 +14,22 @@ orderRouter.post('/add', authenticateUser, orderAdding);
 
 
 orderRouter.post('/verify-payment', authenticateUser, verifyPayment);
+orderRouter.get('/orderuser',authenticateUser,orderUser)
+orderRouter.post('/ordercancel/:orderId',authenticateUser,cancelOrder)
 
 
-orderRouter.get('/all', authenticateUser, allOrderView);
+orderRouter.get('/allorders', getAllOrders);
 
 
 orderRouter.get('/:orderId', authenticateUser, orderViewById);
 
 
-orderRouter.delete('/:id', authenticateUser, orderDelete);
+orderRouter.delete('/order/:orderId', authenticateUser, orderDelete);
 
 orderRouter.post('/cancel',cancelPayment)
+
+
+// orderRouter.delete('/order/:orderId', authenticateUser,orderRemove) 
 
 
 
