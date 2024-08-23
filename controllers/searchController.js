@@ -4,10 +4,10 @@ import Product from "../models/productModel.js"
 
 const searchItems = async (req, res) => {
     try {
-        const query = req.query.query || ''; // Query from the URL
-        const regex = new RegExp(query, 'i'); // Case-insensitive regex
+        const query = req.query.query || ''; 
+        const regex = new RegExp(query, 'i'); 
 
-        // Search for products by title, category, or subcategory
+       
         const products = await Product.find({
             $or: [
                 { title: regex },
