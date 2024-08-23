@@ -7,6 +7,9 @@ import authenticateSeller from "../middlewares/sellerMiddleware.js";
 const sellerRouter=express.Router();
 
 
+
+
+
 sellerRouter.post("/sellersignup",sellerRegisteration);
 sellerRouter.post("/sellerlogin",sellerLogin);
 sellerRouter.get("/sellers",getAllSellers);

@@ -1,29 +1,31 @@
-import Product from "../models/productModel.js";
+import Product from "../models/productModel.js"
 
-const search = async (req, res) => {
-  try {
-    console.log("today hitted")
-    const { title,category } = req.query;
 
-    let searchQuery = {};
-    
-    if (title) {
-      searchQuery.title = new RegExp(title, 'i');
-    }
-    else if(category) {
-      searchQuery.category = new RegExp(category,'i')
-    }
-    else {
-      return res.status(400).json({ message: "Please provide a search query." });
-    }
 
-    const searchItem = await Product.find(searchQuery);
-    res.json({ searchItem });
-    console.log("searchitem hitted")
-  } catch (error) {
-    console.error('Error retrieving products:', error);
-    res.status(500).json({ message: 'Error retrieving products', error });
-  }
+const searchItems = async (req, res) => {
+    try {
+        const query = req.query.query || ''; // Query from the URL
+        const regex = new RegExp(query, 'i'); // Case-insensitive regex
+
+        // Search for products by title, category, or subcategory
+        const products = await Product.find({
+            $or: [
+                { title: regex },
+                { category: regex },
+                { subcategory: regex }
+            ]
+        });
+
+        res.status(200).json({
+            success: true,
+            searchItem: products,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
 };
 
-export default search;
+export default searchItems;

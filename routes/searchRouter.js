@@ -1,14 +1,11 @@
-import express from "express";
-import search from "../controllers/searchController.js";
+import express from 'express';
+import searchItems from '../controllers/searchController.js';
 
 
 
+const searchRouter = express.Router();
 
 
-const searchRouter=express.Router()
-
-
-
-searchRouter.get("/searchitem",search)
+searchRouter.get('/search', searchItems);
 
 export default searchRouter;

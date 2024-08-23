@@ -8,7 +8,8 @@ import Product from "../models/productModel.js";
 
 const cartAdding = async (req, res) => {
   try {
-    console.log("hitted")
+    console.log("hittedcart")
+    console.log("productId",req.params)
     const userId = req.user.id;
     const {productId}=req.params;
     const { quantity} = req.body;
@@ -69,6 +70,7 @@ const cartAdding = async (req, res) => {
 
 const cartViewById = async (req, res) => {
   try {
+    console.log("error")
     const userId  = req.user.id;
     console.log(userId)
 

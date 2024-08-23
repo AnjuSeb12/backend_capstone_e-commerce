@@ -3,18 +3,14 @@ import { cartAdding, cartCount, cartDelete, cartUpdate, cartViewById, clearCart 
 import authenticateUser from '../middlewares/userMiddleware.js';
 
 
-
-
-
-const cartRouter = express.Router();
-
+const cartRouter=express.Router()
 
 
 cartRouter.post("/addcart/:productId",authenticateUser,cartAdding);
 cartRouter.get("/viewbyidcart",authenticateUser,cartViewById);
 cartRouter.put("/updatecart/:cartItemId",authenticateUser,cartUpdate);
 cartRouter.delete("/cartdelete/:cartItemId",authenticateUser,cartDelete);
-// cartRouter.delete("/cartdelete/:cartId/:cartItemId",authenticateUser,cartDelete);
+
 cartRouter.delete('/clear',authenticateUser,clearCart)
 cartRouter.get('/count',authenticateUser,cartCount)
 

@@ -3,6 +3,9 @@ import Order from "../models/orderModel.js";
 import Payment from "../models/paymentModel.js"
 import Product from "../models/productModel.js";
 import Cart from "../models/cartModel.js";
+import User from "../models/userModel.js";
+
+
 
 
 
@@ -128,9 +131,9 @@ export const cancelOrder = async (req, res) => {
     try {
         console.log("hitted")
         console.log(req.user.id)
-        const userId = req.user.id; 
+        const userId = req.user.id;
         console.log(req.params.orderId)
-        const orderId = req.params.orderId; 
+        const orderId = req.params.orderId;
         if (!orderId || !userId) {
             return res.status(400).json({ error: 'Invalid orderId or userId' });
         }
@@ -139,10 +142,10 @@ export const cancelOrder = async (req, res) => {
         console.log('Order found:', order);
 
         if (order) {
-            order.paymentStatus = 'Canceled'; 
+            order.paymentStatus = 'Canceled';
             await order.save();
 
-           
+
             res.json({ message: 'Order canceled successfully' });
         } else {
             res.status(404).json({ error: 'Order not found or not authorized to cancel this order' });
@@ -183,31 +186,164 @@ export const cancelPayment = async (req, res) => {
 
 export const orderUser = async (req, res) => {
     try {
-      
+
         console.log("hitt")
         const user = req.user.id;
-        const orders = await Order.find({ user});
+        const orders = await Order.find({ user });
         res.json({ orders });
     } catch (error) {
-        console.error("Error fetching orders:", error); 
-        
+        console.error("Error fetching orders:", error);
+
         res.status(500).json({ error: 'Error fetching orders' });
     }
 };
 
 
+// export const getAllOrders = async (req, res) => {
+//     try {
+//         const orders = await Order.find()
+//             .populate('user','firstName lastName email')
+//             .populate({
+//                 path: 'orderItems.productId',
+//                 select: 'title image',  // Select only specific fields from product
+//             });
+
+//         if (!orders) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Orders not found!",
+//             });
+//         }
+
+//         // Fetch associated payment details for each order
+//         const ordersWithPaymentStatus = await Promise.all(orders.map(async (order) => {
+//             const payment = await Payment.findOne({ order: order._id });
+//             return {
+//                 ...order.toObject(),
+//                 paymentStatus: payment ? payment.paymentStatus : 'Pending',
+//             };
+//         }));
+
+//         res.status(200).json({
+//             success: true,
+//             orders: ordersWithPaymentStatus,
+//         });
+
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: error.message,
+//         });
+//     }
+// };
+
 export const getAllOrders = async (req, res) => {
     try {
-        console.log("adminhitted")
         const orders = await Order.find()
-            .populate('user','name email')
-            // .populate('orderItems.product');
-            console.log(orders)
-        res.json(orders);
+            .populate('user', 'firstName lastName email')
+            .populate({
+                path: 'orderItems.productId',
+                select: 'title image',  // Select only specific fields from product
+            });
+            console.log('Fetched Orders:', orders);
+
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Orders not found!",
+            });
+        }
+
+        // Fetch associated payment details for each order and handle cancellation status
+        const ordersWithPaymentStatus = await Promise.all(orders.map(async (order) => {
+            let paymentStatus = 'Pending';  // Default status
+
+            if (order.paymentStatus === 'Canceled') {
+                paymentStatus = 'Canceled';
+            } else {
+                const payment = await Payment.findOne({ order: order._id });
+                if (payment) {
+                    paymentStatus = payment.paymentStatus;
+                }
+            }
+
+            return {
+                ...order.toObject(),
+                paymentStatus,
+            };
+        }));
+
+        res.status(200).json({
+            success: true,
+            orders: ordersWithPaymentStatus,
+        });
+
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
     }
 };
+// export const getAllOrders = async (req, res) => {
+//     try {
+//         // Fetch all orders with user and product details
+//         const orders = await Order.find()
+//             .populate('user', 'firstName lastName email')
+//             .populate({
+//                 path: 'orderItems.productId',
+//                 select: 'title image',  // Select only specific fields from product
+//             });
+
+//         if (!orders || orders.length === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Orders not found!",
+//             });
+//         }
+
+//         console.log('Fetched Orders:', orders);
+
+//         // Fetch associated payment details and handle cancellation status
+//         const ordersWithPaymentStatus = await Promise.all(orders.map(async (order) => {
+//             let paymentStatus = 'Pending';  // Default status
+
+//             // Determine if the order is canceled
+//             if (order.status === 'Canceled') {
+//                 paymentStatus = 'Canceled';
+//             } else {
+//                 // Fetch payment status if not canceled
+//                 const payment = await Payment.findOne({ order: order._id });
+//                 if (payment) {
+//                     paymentStatus = payment.paymentStatus;
+//                 }
+//             }
+
+//             // Return order with payment status and cancel status
+//             return {
+//                 ...order.toObject(),
+//                 paymentStatus,
+//                 cancelStatus: order.status === 'Canceled' ? 'Canceled' : 'Active', // Include cancel status
+//             };
+//         }));
+
+//         console.log('Orders with Payment Status:', ordersWithPaymentStatus);
+
+//         res.status(200).json({
+//             success: true,
+//             orders: ordersWithPaymentStatus,
+//         });
+
+//     } catch (error) {
+//         console.error('Error fetching orders:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: error.message,
+//         });
+//     }
+// };
+
+
 
 export const orderViewById = async (req, res) => {
     const userId = req.user.id;

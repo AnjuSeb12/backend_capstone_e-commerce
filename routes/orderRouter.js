@@ -18,7 +18,7 @@ orderRouter.get('/orderuser',authenticateUser,orderUser)
 orderRouter.post('/ordercancel/:orderId',authenticateUser,cancelOrder)
 
 
-orderRouter.get('/allorders', getAllOrders);
+orderRouter.get('/allorders',getAllOrders);
 
 
 orderRouter.get('/:orderId', authenticateUser, orderViewById);

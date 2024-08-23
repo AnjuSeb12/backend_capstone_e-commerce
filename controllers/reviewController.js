@@ -1,98 +1,67 @@
+
+
+import Product from '../models/productModel.js';
 import Review from "../models/reviewModel.js";
 import Order from "../models/orderModel.js";
 
 
 
-const userReview = async (req, res) => {
+export const reviewAdding = async (req, res) => {
+    console.log("....reviewadding");
+    console.log(req.body);
+
+    const userId = req.user.id; 
+    const { rating, comment } = req.body;
+    const { productId } = req.params;
+
+    console.log("User ID:", userId);
+    console.log("Product ID:", productId);
+
     try {
-        console.log(req.params)
-        const { userId, productId } = req.params;
-        const { rating, text } = req.body;
-
-        const purchase = await Order.find({ user: userId, product: productId });
-        console.log(purchase)
-
-        if (!purchase) { return res.status(403).send('User has not purchased product') };
-
-        const review = new Review({
+        // Find the order where the user purchased the product and the order status is 'Paid'
+        const order = await Order.findOne({
             user: userId,
-            product: productId,
-            rating,
-            text
-        });
-        await review.save();
-        res.status(201).json({
-            success: true,
-            message: "Review Submitted",
-            review
-        })
+            'orderItems.productId': productId,
+            paymentStatus: 'Paid'
+        }).populate('orderItems.productId');
 
+        console.log("Order:", order);
+
+        if (!order) {
+            return res.status(403).json({ success: false, message: 'You must purchase the product before leaving a review.' });
+        }
+
+        // Create a new review
+        const review = await Review.create({ product: productId, user: userId, rating, comment });
+        console.log("Review Created:", review);
+
+        // Update product review statistics
+        await Product.updateReviewStats(productId);
+
+        res.status(201).json({ success: true, review });
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-
-        })
-
+        console.error("Error submitting review:", error);
+        res.status(400).json({ success: false, message: error.message });
     }
-
 };
-const getReviewById = async (req, res) => {
+
+
+export const getReview = async (req, res) => {
     try {
-        const {productId,userId } = req.params;
+        console.log("hityedgetreview")
+    
+    const { productId } = req.params;
 
-        const getreview = await Review.find({ product:productId,user:userId});
-        if (!getreview) {
-            return res.status(404).json({
-                success: false,
-                message: "Not have User review",
+   
+        // Fetch reviews for the given product
+        const reviews = await Review.find({ product: productId })
+            .populate('user', 'name') // Optionally populate user details if needed
+            .sort({ createdAt: -1 }); // Sort reviews by most recent first
 
-            })
-        }
-        res.status(200).json({
-            success:true,
-            message: "Successfully got review from User side",
-            getreview
-        })
-
+        res.status(200).json({ success: true, reviews });
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-
-        })
-
+        res.status(400).json({ success: false, message: error.message });
     }
+};
 
-}
-const getReviewByIdinuserpage = async (req, res) => {
-    try {
-        const {productId } = req.params;
-
-        const getreview = await Review.find({ product:productId});
-        if (!getreview) {
-            return res.status(404).json({
-                success: false,
-                message: "Not have User review",
-
-            })
-        }
-        res.status(200).json({
-            success:true,
-            message: "Successfully got review from User side",
-            getreview
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-
-        })
-
-    }
-
-}
-
-export { getReviewById, userReview,getReviewByIdinuserpage };
 
